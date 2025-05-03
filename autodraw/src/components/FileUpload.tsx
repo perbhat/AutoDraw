@@ -4,6 +4,12 @@ import Image from "next/image";
 import { useState, useRef, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, useGLTF, Environment, Stage } from "@react-three/drei";
+import dynamic from "next/dynamic";
+
+// Dynamically import DxfEditor to avoid SSR issues
+const DxfEditor = dynamic(() => import("./DxfEditor"), {
+  ssr: false,
+});
 
 function Model() {
   const { scene } = useGLTF("/flange.gltf");
@@ -14,6 +20,8 @@ export default function FileUpload() {
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showDxfEditor, setShowDxfEditor] = useState(false);
+  const [dxfContent, setDxfContent] = useState<string>("");
   const dropRef = useRef<HTMLDivElement>(null);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -31,20 +39,50 @@ export default function FileUpload() {
     setIsDragging(false);
     
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      setFile(e.dataTransfer.files[0]);
-      setShowModal(true);
+      const droppedFile = e.dataTransfer.files[0];
+      setFile(droppedFile);
+      
+      // Check if it's a DXF file
+      if (droppedFile.name.toLowerCase().endsWith('.dxf')) {
+        handleDxfFile(droppedFile);
+      } else {
+        setShowModal(true);
+      }
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
-      setShowModal(true);
+      const selectedFile = e.target.files[0];
+      setFile(selectedFile);
+      
+      // Check if it's a DXF file
+      if (selectedFile.name.toLowerCase().endsWith('.dxf')) {
+        handleDxfFile(selectedFile);
+      } else {
+        setShowModal(true);
+      }
     }
+  };
+  
+  const handleDxfFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      setDxfContent(content);
+      setShowDxfEditor(true);
+    };
+    reader.readAsText(file);
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
+    setFile(null);
+  };
+  
+  const handleCloseDxfEditor = () => {
+    setShowDxfEditor(false);
+    setDxfContent("");
     setFile(null);
   };
 
@@ -76,16 +114,17 @@ export default function FileUpload() {
           <input 
             type="file" 
             className="hidden" 
+            accept=".dxf,.gltf,.glb,.obj"
             onChange={handleFileChange}
           />
         </label>
       </div>
 
-      {/* Modal */}
+      {/* 3D Model Viewer Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-10">
           <div className="bg-background p-8 rounded-lg max-w-4xl w-full">
-            <h2 className="text-xl font-bold mb-4">Thanks for uploading</h2>
+            <h2 className="text-xl font-bold mb-4">3D Model Viewer</h2>
             {file && (
               <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
                 {file.name} ({Math.round(file.size / 1024)} KB)
@@ -111,9 +150,28 @@ export default function FileUpload() {
                 onClick={handleCloseModal}
                 className="bg-foreground text-background px-4 py-2 rounded-full hover:bg-gray-800 dark:hover:bg-gray-300 transition-colors"
               >
-                Next
+                Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      
+      {/* DXF Editor Modal */}
+      {showDxfEditor && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-10">
+          <div className="bg-background p-4 rounded-lg w-[95%] h-[90%] overflow-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">DXF Editor</h2>
+              <button
+                onClick={handleCloseDxfEditor}
+                className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+            {/* @ts-ignore - The component accepts initialDxf prop */}
+            <DxfEditor initialDxf={dxfContent} />
           </div>
         </div>
       )}
