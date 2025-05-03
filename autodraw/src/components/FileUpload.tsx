@@ -1,7 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useRef } from "react";
+import { useState, useRef, Suspense } from "react";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls, useGLTF, Environment, Stage } from "@react-three/drei";
+
+function Model() {
+  const { scene } = useGLTF("/flange.gltf");
+  return <primitive object={scene} scale={0.5} />;
+}
 
 export default function FileUpload() {
   const [isDragging, setIsDragging] = useState(false);
@@ -77,13 +84,28 @@ export default function FileUpload() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-10">
-          <div className="bg-background p-8 rounded-lg max-w-md w-full">
+          <div className="bg-background p-8 rounded-lg max-w-4xl w-full">
             <h2 className="text-xl font-bold mb-4">Thanks for uploading</h2>
             {file && (
               <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
                 {file.name} ({Math.round(file.size / 1024)} KB)
               </p>
             )}
+            <div className="w-full h-[600px] mb-4">
+              <Canvas camera={{ position: [4, 4, 4], fov: 50 }}>
+                <Stage environment="city" intensity={0.6}>
+                  <Suspense fallback={null}>
+                    <Model />
+                  </Suspense>
+                </Stage>
+                <OrbitControls 
+                  minPolarAngle={0} 
+                  maxPolarAngle={Math.PI / 2}
+                  enablePan={true}
+                  enableZoom={true}
+                />
+              </Canvas>
+            </div>
             <div className="flex justify-end">
               <button
                 onClick={handleCloseModal}
