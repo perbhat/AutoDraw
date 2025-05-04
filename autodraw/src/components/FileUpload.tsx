@@ -42,11 +42,17 @@ export default function FileUpload() {
       const droppedFile = e.dataTransfer.files[0];
       setFile(droppedFile);
       
-      // Check if it's a DXF file
+      // Always show the 3D model first
+      setShowModal(true);
+      
+      // If it's a DXF file, also prepare the DXF content
       if (droppedFile.name.toLowerCase().endsWith('.dxf')) {
-        handleDxfFile(droppedFile);
-      } else {
-        setShowModal(true);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const content = e.target?.result as string;
+          setDxfContent(content);
+        };
+        reader.readAsText(droppedFile);
       }
     }
   };
@@ -56,28 +62,30 @@ export default function FileUpload() {
       const selectedFile = e.target.files[0];
       setFile(selectedFile);
       
-      // Check if it's a DXF file
+      // Always show the 3D model first
+      setShowModal(true);
+      
+      // If it's a DXF file, also prepare the DXF content
       if (selectedFile.name.toLowerCase().endsWith('.dxf')) {
-        handleDxfFile(selectedFile);
-      } else {
-        setShowModal(true);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const content = e.target?.result as string;
+          setDxfContent(content);
+        };
+        reader.readAsText(selectedFile);
       }
     }
-  };
-  
-  const handleDxfFile = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target?.result as string;
-      setDxfContent(content);
-      setShowDxfEditor(true);
-    };
-    reader.readAsText(file);
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setFile(null);
+    
+    // If we have DXF content, show the DXF editor next
+    if (dxfContent) {
+      setShowDxfEditor(true);
+    } else {
+      setFile(null);
+    }
   };
   
   const handleCloseDxfEditor = () => {
@@ -150,7 +158,7 @@ export default function FileUpload() {
                 onClick={handleCloseModal}
                 className="bg-foreground text-background px-4 py-2 rounded-full hover:bg-gray-800 dark:hover:bg-gray-300 transition-colors"
               >
-                Close
+                {dxfContent ? 'Next' : 'Close'}
               </button>
             </div>
           </div>

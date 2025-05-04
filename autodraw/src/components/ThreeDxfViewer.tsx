@@ -25,7 +25,7 @@ const DxfLine = ({ start, end, color = 'white' }: { start: [number, number, numb
 };
 
 // Simple text component to render DXF text
-const DxfText = ({ position, text, color = 'white' }: { position: [number, number, number], text: string, color?: string }) => {
+const DxfText = ({ position, color = 'white' }: { position: [number, number, number], color?: string }) => {
   return (
     <mesh position={position}>
       <sphereGeometry args={[0.1, 16, 16]} />
@@ -68,7 +68,7 @@ const DxfEntities = ({ dxf }: { dxf: any }) => {
             entity.position.y || 0,
             entity.position.z || 0
           ];
-          return <DxfText key={`text-${index}`} position={position} text={entity.text || ''} />;
+          return <DxfText key={`text-${index}`} position={position} />;
         }
         
         return null;

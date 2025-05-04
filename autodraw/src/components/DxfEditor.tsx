@@ -4,8 +4,32 @@ import dynamic from 'next/dynamic';
 import { DxfParser } from 'dxf-parser';
 import Drawing from 'dxf-writer';
 
+// Define the Unit type to match dxf-writer's expected type
+type Unit =
+  | "Unitless"
+  | "Inches"
+  | "Feet"
+  | "Miles"
+  | "Millimeters"
+  | "Centimeters"
+  | "Meters"
+  | "Kilometers"
+  | "Microinches"
+  | "Mils"
+  | "Yards"
+  | "Angstroms"
+  | "Nanometers"
+  | "Microns"
+  | "Decimeters"
+  | "Decameters"
+  | "Hectometers"
+  | "Gigameters"
+  | "Astronomical units"
+  | "Light years"
+  | "Parsecs";
+
 // Dynamically import Three-DXF to avoid SSR issues
-const ThreeDxfViewer = dynamic(() => import('./ThreeDxfViewer'), {
+const ThreeDxfViewer = dynamic(() => import('./index').then(mod => ({ default: mod.ThreeDxfViewer })), {
   ssr: false,
 });
 
@@ -88,15 +112,37 @@ const DxfEditor: React.FC<DxfEditorProps> = ({ initialDxf }) => {
       
       // Set up the units
       if (parsedDxf.header && parsedDxf.header.measurement) {
-        const units = ['Unitless', 'Inches', 'Feet', 'Miles', 'Millimeters', 
-                      'Centimeters', 'Meters', 'Kilometers', 'Microinches', 
-                      'Mils', 'Yards', 'Angstroms', 'Nanometers', 'Microns', 
-                      'Decimeters', 'Decameters', 'Hectometers', 'Gigameters', 
-                      'Astronomical units', 'Light years', 'Parsecs'];
+        // Map measurement values to unit strings
+        const unitMapping: Unit[] = [
+          "Unitless",      // 0
+          "Inches",        // 1
+          "Feet",          // 2
+          "Miles",         // 3
+          "Millimeters",   // 4
+          "Centimeters",   // 5
+          "Meters",        // 6
+          "Kilometers",    // 7
+          "Microinches",   // 8
+          "Mils",          // 9
+          "Yards",         // 10
+          "Angstroms",     // 11
+          "Nanometers",    // 12
+          "Microns",       // 13
+          "Decimeters",    // 14
+          "Decameters",    // 15
+          "Hectometers",   // 16
+          "Gigameters",    // 17
+          "Astronomical units", // 18
+          "Light years",    // 19
+          "Parsecs"        // 20
+        ];
         
         const unitIndex = parsedDxf.header.measurement;
-        if (unitIndex >= 0 && unitIndex < units.length) {
-          drawing.setUnits(units[unitIndex]);
+        if (unitIndex >= 0 && unitIndex < unitMapping.length) {
+          drawing.setUnits(unitMapping[unitIndex]);
+        } else {
+          // Default to millimeters if the unit is not recognized
+          drawing.setUnits("Millimeters" as Unit);
         }
       }
       
